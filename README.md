@@ -49,10 +49,10 @@ Home Assistant
 
 ```text
 firmware/
-└── ChatGPT_esphome_water_bowl.yaml
+└── esphome_water_bowl.yaml
 hardware/
 ├── enclosure/
-│   └── ChatGPT_water_bowl_electronics_carrier.scad
+│   └── water_bowl_electronics_carrier.scad
 └── loadcell-brackets/
     ├── 50kgLoadcell-VersionF.stl
     ├── 50kgLoadcell-VersionF-2021.stl
@@ -67,7 +67,7 @@ Additional directories will be added as wiring documentation and the bowl-platfo
 
 The current ESPHome configuration is:
 
-[`firmware/ChatGPT_esphome_water_bowl.yaml`](firmware/ChatGPT_esphome_water_bowl.yaml)
+[`firmware/esphome_water_bowl.yaml`](firmware/esphome_water_bowl.yaml)
 
 It currently provides:
 
@@ -92,7 +92,7 @@ The `counts_per_lb` substitution is currently a placeholder and must be replaced
 
 The current carrier source is:
 
-[`hardware/enclosure/ChatGPT_water_bowl_electronics_carrier.scad`](hardware/enclosure/ChatGPT_water_bowl_electronics_carrier.scad)
+[`hardware/enclosure/water_bowl_electronics_carrier.scad`](hardware/enclosure/water_bowl_electronics_carrier.scad)
 
 The filename remains stable across revisions. The printed revision is controlled by the `board_version` value inside the SCAD file and is physically raised on the carrier.
 
@@ -180,7 +180,7 @@ The two STL files in this directory have been repaired for reliable slicing whil
 The carrier filename does not include a revision number. Future carrier revisions will continue to use:
 
 ```text
-hardware/enclosure/ChatGPT_water_bowl_electronics_carrier.scad
+hardware/enclosure/water_bowl_electronics_carrier.scad
 ```
 
 The revision number must instead be updated in the SCAD file:
