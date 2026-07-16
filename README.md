@@ -49,7 +49,7 @@ Home Assistant
 ```text
 hardware/
 └── enclosure/
-    └── ChatGPT_water_bowl_electronics_carrier_v33_latest_hole_positions.scad
+    └── ChatGPT_water_bowl_electronics_carrier.scad
 ```
 
 Additional directories will be added as the ESPHome configuration, wiring documentation, and remaining mechanical parts are completed.
@@ -58,7 +58,9 @@ Additional directories will be added as the ESPHome configuration, wiring docume
 
 The current electronics carrier is:
 
-[`hardware/enclosure/ChatGPT_water_bowl_electronics_carrier_v33_latest_hole_positions.scad`](hardware/enclosure/ChatGPT_water_bowl_electronics_carrier_v33_latest_hole_positions.scad)
+[`hardware/enclosure/ChatGPT_water_bowl_electronics_carrier.scad`](hardware/enclosure/ChatGPT_water_bowl_electronics_carrier.scad)
+
+The carrier filename remains stable across revisions. The current revision is embedded directly in the printed part through the `board_version` value in the SCAD file.
 
 V33 is designed specifically for the LeMotech enclosure and holds:
 
