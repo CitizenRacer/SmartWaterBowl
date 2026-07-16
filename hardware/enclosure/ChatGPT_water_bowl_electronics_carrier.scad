@@ -1,11 +1,11 @@
 /*
 ChatGPT ESPHome Water Bowl Scale
-LeMotech 115 x 90 x 55 mm electronics carrier - V33
+LeMotech 115 x 90 x 55 mm electronics carrier - V34
 
-V33 change:
-- ESP32 header-pin channel width reduced from 2.35 mm to 0.90 mm.
-- Intended for approximately 0.65 mm-wide header pins.
-- All other geometry is unchanged from the fully commented V19 baseline.
+V34 change:
+- ESP32 header-pin channel gap set to 0.635 mm.
+- Sized for measured 0.63 mm-wide ESP32 header pins.
+- All other V33 geometry is unchanged.
 */
 
 $fn = 48;  // Number of facets used to approximate circles.
@@ -14,7 +14,7 @@ $fn = 48;  // Number of facets used to approximate circles.
 
 mode = "carrier";  // "carrier" creates the complete part; "fit_check" creates a thin enclosure-fit test.
 
-board_version = "V33";  // Revision text printed on the carrier.
+board_version = "V34";  // Revision text printed on the carrier.
 
 base_t = 2.0;  // Finished carrier plate thickness.
 
@@ -53,7 +53,6 @@ mount_points = [
     [74.64, 15.07]   // Hole D: unchanged.
 ];
 
-
 standoff_h = 5.0;  // Height of SparkFun PCB support pads.
 
 standoff_od = 6.4;  // Outside diameter of SparkFun PCB support pads.
@@ -72,7 +71,7 @@ esp_rail_t = 1.40;  // Thickness of the outer ESP32 cradle rails.
 
 esp_rail_h = 3.2;  // Height of the outer ESP32 cradle rails.
 
-esp_pin_channel_w = 0.80;  // Gap that captures each 0.65 mm-wide ESP32 header-pin row.
+esp_pin_channel_w = 0.635;  // Gap sized for measured 0.63 mm-wide ESP32 header pins.
 
 esp_inner_rail_t = 1.00;  // Thickness of each inner ESP32 rail.
 
@@ -82,30 +81,22 @@ esp_inner_rail_end_clearance = 1.50;  // Distance inner rails stop short of each
 
 // ---------- Diagnostic output ----------
 
-echo("V33 wall_clearance", wall_clearance);
-echo("V33 bump_projection", bump_projection);
-echo("V33 esp_pin_channel_w", esp_pin_channel_w);
-echo("V33 prototype_pin_d", prototype_pin_d);
+echo("V34 wall_clearance", wall_clearance);
+echo("V34 bump_projection", bump_projection);
+echo("V34 esp_pin_channel_w", esp_pin_channel_w);
+echo("V34 prototype_pin_d", prototype_pin_d);
 echo("Board version", board_version);
-echo("V33 hole A", mount_points[0]);
-echo("V33 hole B", mount_points[1]);
-echo("V33 hole C", mount_points[2]);
-echo("V33 hole D", mount_points[3]);
-echo("V33 hole A", mount_points[0]);
-echo("V33 hole B", mount_points[1]);
-echo("V33 hole C", mount_points[2]);
-echo("V33 hole D", mount_points[3]);
-echo("V33 rotated combinator position", comb_pos);
-echo("V33 combinator center Y", comb_pos[1] + comb_h/2);
-echo("V33 HX711 center Y", hx_pos[1] + hx_h/2);
-echo("V33 rotated combinator size", [comb_w, comb_h]);
-echo("V33 combinator right edge", comb_pos[0] + comb_w);
-echo("V33 HX711 left edge", hx_pos[0]);
-echo("V33 board gap", hx_pos[0] - (comb_pos[0] + comb_w));
-echo("V33 hole A", mount_points[0]);
-echo("V33 hole B", mount_points[1]);
-echo("V33 hole C", mount_points[2]);
-echo("V33 hole D", mount_points[3]);
+echo("V34 hole A", mount_points[0]);
+echo("V34 hole B", mount_points[1]);
+echo("V34 hole C", mount_points[2]);
+echo("V34 hole D", mount_points[3]);
+echo("V34 rotated combinator position", comb_pos);
+echo("V34 combinator center Y", comb_pos[1] + comb_h/2);
+echo("V34 HX711 center Y", hx_pos[1] + hx_h/2);
+echo("V34 rotated combinator size", [comb_w, comb_h]);
+echo("V34 combinator right edge", comb_pos[0] + comb_w);
+echo("V34 HX711 left edge", hx_pos[0]);
+echo("V34 board gap", hx_pos[0] - (comb_pos[0] + comb_w));
 
 // ---------- Version marking ----------
 
