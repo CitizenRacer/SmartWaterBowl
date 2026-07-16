@@ -4,14 +4,14 @@ SmartWaterBowl is an ESPHome-based scale for monitoring the amount of water in a
 
 Four load sensors support the bowl platform. Their signals are combined, digitized by an HX711 amplifier, and read by an ESP32-S3 running ESPHome.
 
-> **Current status:** The electronics carrier has been fit-tested and is currently at board revision **V35**. Wiring, firmware, calibration, the bowl platform, and load-sensor mounts are still in development.
+> **Current status:** The electronics carrier has been fit-tested and is currently at board revision **V35**. The load-cell bracket design and repaired STL files are now tracked in the repository. Wiring, firmware, calibration, and the bowl platform are still in development.
 
 ## System overview
 
 ```text
 Water bowl and platform
         ↓
-4 × load sensors
+4 × load sensors in printed brackets
         ↓
 SparkFun Load Sensor Combinator
         ↓
@@ -35,6 +35,7 @@ Home Assistant
 | Component | Purpose |
 |---|---|
 | 4 × SparkFun 50 kg load sensors | Support and weigh the bowl platform |
+| 3D-printed load-cell brackets | Hold each load sensor and transfer platform load |
 | SparkFun Load Sensor Combinator | Combines the four load sensors into one bridge output |
 | SparkFun HX711 Load Cell Amplifier | Digitizes the load-cell signal |
 | ESP32-S3 SuperMini | Runs ESPHome and publishes measurements over Wi-Fi |
@@ -48,11 +49,17 @@ Home Assistant
 
 ```text
 hardware/
-└── enclosure/
-    └── ChatGPT_water_bowl_electronics_carrier.scad
+├── enclosure/
+│   └── ChatGPT_water_bowl_electronics_carrier.scad
+└── loadcell-brackets/
+    ├── 50kgLoadcell-VersionF.stl
+    ├── 50kgLoadcell-VersionF-2021.stl
+    ├── source CAD and preview images
+    ├── README.txt
+    └── LICENSE.txt
 ```
 
-Additional directories will be added as the ESPHome configuration, wiring documentation, and remaining mechanical parts are completed.
+Additional directories will be added as the ESPHome configuration, wiring documentation, and bowl-platform design are completed.
 
 ## Electronics carrier
 
@@ -113,6 +120,16 @@ Suggested starting print settings:
 
 Confirm dimensions, tolerances, and material suitability for the actual enclosure and operating environment before committing to a complete build.
 
+## Load-cell brackets
+
+The selected bracket design is **50kg Loadcell Bracket versionF** by Thingiverse user **patrick3345**:
+
+- Original source: <https://www.thingiverse.com/thing:2624188>
+- License: Creative Commons Attribution, as stated in the supplied `LICENSE.txt`
+- Preserved attribution and source files: [`hardware/loadcell-brackets/`](hardware/loadcell-brackets/)
+
+The two STL files in this directory have been repaired for reliable slicing while retaining their original filenames. The original README, license, source CAD files, preview images, and project fit-test photos remain beside them so attribution and design context stay together.
+
 ## Current progress
 
 - [x] Select the load sensors and electronics
@@ -121,10 +138,12 @@ Confirm dimensions, tolerances, and material suitability for the actual enclosur
 - [x] Design and fit-test the electronics carrier
 - [x] Finalize carrier board revision V35
 - [x] Adopt a stable carrier filename independent of board revision
+- [x] Select and archive the load-cell bracket design with attribution
+- [x] Repair the bracket STL files for slicing
+- [ ] Integrate the brackets into the bowl platform
 - [ ] Finalize the wiring diagram and ESP32 pin assignments
 - [ ] Add the ESPHome configuration
 - [ ] Calibrate the assembled scale
-- [ ] Design the bowl platform and load-sensor mounts
 - [ ] Add Home Assistant dashboards and automations
 - [ ] Validate long-term stability and water resistance
 
@@ -167,10 +186,10 @@ Once assembled, the scale will need at least two calibration points:
 3. Use those values to calculate the scale factor in ESPHome.
 4. Verify the result with several known weights across the expected operating range.
 
-The bowl, platform, and any permanent hardware should be installed before calibration so their weight can be included in the tare value.
+The bowl, platform, brackets, and any other permanent hardware should be installed before calibration so their weight can be included in the tare value.
 
 ## Water protection
 
 This project places powered electronics near a water bowl. Use only low-voltage power, route cables through sealed glands, provide strain relief, and keep the electronics enclosure physically separated from areas where spilled water can collect.
 
-The printed carrier is an internal mounting part and is not itself a waterproof barrier.
+The printed electronics carrier and load-cell brackets are mechanical parts and are not themselves waterproof barriers.
