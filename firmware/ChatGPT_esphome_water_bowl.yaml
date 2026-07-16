@@ -238,16 +238,21 @@ button:
           reason: "manual"
 
 sensor:
-  # Raw HX711 stream. It remains internal because users care about calibrated
-  # water weight, not ADC counts.
+  # Raw HX711 ADC counts used for calibration and troubleshooting. This is
+  # exposed as a diagnostic entity but disabled by default in Home Assistant
+  # to avoid clutter and unnecessary recorder history. Enable it from the
+  # device page when calibrating or investigating unstable readings.
   - platform: hx711
+    name: Raw HX711
     id: hx711_raw
+    entity_category: diagnostic
+    disabled_by_default: true
+    accuracy_decimals: 0
+    state_class: measurement
     dout_pin: ${hx711_dout_pin}
     clk_pin: ${hx711_clock_pin}
     gain: 128
     update_interval: 1s
-    internal: true
-
     # Median filtering rejects occasional one-sample electrical/mechanical
     # spikes without adding excessive delay.
     filters:
