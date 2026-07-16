@@ -1,11 +1,12 @@
 /*
 ChatGPT ESPHome Water Bowl Scale
-LeMotech 115 x 90 x 55 mm electronics carrier - V34
+LeMotech 115 x 90 x 55 mm electronics carrier - V35
 
-V34 change:
-- ESP32 header-pin channel gap set to 0.635 mm.
-- Sized for measured 0.63 mm-wide ESP32 header pins.
-- All other V33 geometry is unchanged.
+V35 changes:
+- ESP32 header-pin channel gap set to 0.635 mm for measured 0.63 mm-wide pins.
+- SparkFun board locking retention restored.
+- Each SparkFun board uses two diagonal split snap-lock posts and two diagonal locator posts.
+- Enclosure geometry and measured mounting-hole positions remain unchanged.
 */
 
 $fn = 48;  // Number of facets used to approximate circles.
@@ -14,7 +15,7 @@ $fn = 48;  // Number of facets used to approximate circles.
 
 mode = "carrier";  // "carrier" creates the complete part; "fit_check" creates a thin enclosure-fit test.
 
-board_version = "V34";  // Revision text printed on the carrier.
+board_version = "V35";  // Revision text printed on the carrier.
 
 base_t = 2.0;  // Finished carrier plate thickness.
 
@@ -53,17 +54,21 @@ mount_points = [
     [74.64, 15.07]   // Hole D: unchanged.
 ];
 
+
 standoff_h = 5.0;  // Height of SparkFun PCB support pads.
 
 standoff_od = 6.4;  // Outside diameter of SparkFun PCB support pads.
 
-prototype_pin_d = 3.18;  // Diameter of each plain SparkFun locator pin.
+// SparkFun board retention. Mounting holes are nominally about 3.302 mm.
+locator_pin_d = 2.90;  // Diameter of the two plain locating posts on each board.
+locator_pin_h = 2.35;  // Height of each locating post above its support pad.
 
-prototype_pin_h = 3.20;  // Locator-pin height above its support pad.
-
-prototype_tip_h = 0.60;  // Height of each tapered locator-pin tip.
-
-prototype_tip_d = 2.75;  // Diameter at the narrow end of each tapered tip.
+snap_stem_d = 2.82;  // Diameter of the flexible snap-post stem.
+snap_stem_h = 2.15;  // Stem height before the retaining barb.
+snap_barb_d = 3.55;  // Maximum retaining-barb diameter.
+snap_barb_h = 0.95;  // Height of the tapered retaining barb.
+snap_tip_d = 2.45;   // Diameter at the top of the tapered barb.
+snap_slot_w = 0.72;  // Width of the split that lets the post compress.
 
 esp_clearance = 0.20;  // Extra clearance around each side of the ESP32 PCB envelope.
 
@@ -81,22 +86,30 @@ esp_inner_rail_end_clearance = 1.50;  // Distance inner rails stop short of each
 
 // ---------- Diagnostic output ----------
 
-echo("V34 wall_clearance", wall_clearance);
-echo("V34 bump_projection", bump_projection);
-echo("V34 esp_pin_channel_w", esp_pin_channel_w);
-echo("V34 prototype_pin_d", prototype_pin_d);
+echo("V35 wall_clearance", wall_clearance);
+echo("V35 bump_projection", bump_projection);
+echo("V35 esp_pin_channel_w", esp_pin_channel_w);
+echo("V35 snap_barb_d", snap_barb_d);
 echo("Board version", board_version);
-echo("V34 hole A", mount_points[0]);
-echo("V34 hole B", mount_points[1]);
-echo("V34 hole C", mount_points[2]);
-echo("V34 hole D", mount_points[3]);
-echo("V34 rotated combinator position", comb_pos);
-echo("V34 combinator center Y", comb_pos[1] + comb_h/2);
-echo("V34 HX711 center Y", hx_pos[1] + hx_h/2);
-echo("V34 rotated combinator size", [comb_w, comb_h]);
-echo("V34 combinator right edge", comb_pos[0] + comb_w);
-echo("V34 HX711 left edge", hx_pos[0]);
-echo("V34 board gap", hx_pos[0] - (comb_pos[0] + comb_w));
+echo("V35 hole A", mount_points[0]);
+echo("V35 hole B", mount_points[1]);
+echo("V35 hole C", mount_points[2]);
+echo("V35 hole D", mount_points[3]);
+echo("V35 hole A", mount_points[0]);
+echo("V35 hole B", mount_points[1]);
+echo("V35 hole C", mount_points[2]);
+echo("V35 hole D", mount_points[3]);
+echo("V35 rotated combinator position", comb_pos);
+echo("V35 combinator center Y", comb_pos[1] + comb_h/2);
+echo("V35 HX711 center Y", hx_pos[1] + hx_h/2);
+echo("V35 rotated combinator size", [comb_w, comb_h]);
+echo("V35 combinator right edge", comb_pos[0] + comb_w);
+echo("V35 HX711 left edge", hx_pos[0]);
+echo("V35 board gap", hx_pos[0] - (comb_pos[0] + comb_w));
+echo("V35 hole A", mount_points[0]);
+echo("V35 hole B", mount_points[1]);
+echo("V35 hole C", mount_points[2]);
+echo("V35 hole D", mount_points[3]);
 
 // ---------- Version marking ----------
 
@@ -193,27 +206,45 @@ module support_pad(x, y) {
         cylinder(h=standoff_h, d=standoff_od);
 }
 
-module prototype_locator_pin(x, y) {
+module locator_post(x, y) {
     support_pad(x, y);
 
-    translate([x, y, base_t + standoff_h]) {
-        cylinder(
-            h=prototype_pin_h-prototype_tip_h,
-            d=prototype_pin_d
-        );
+    translate([x, y, base_t + standoff_h])
+        cylinder(h=locator_pin_h, d=locator_pin_d);
+}
 
-        translate([0, 0, prototype_pin_h-prototype_tip_h])
-            cylinder(
-                h=prototype_tip_h,
-                d1=prototype_pin_d,
-                d2=prototype_tip_d
-            );
+module snap_post(x, y) {
+    support_pad(x, y);
+
+    translate([x, y, base_t + standoff_h])
+    difference() {
+        union() {
+            cylinder(h=snap_stem_h, d=snap_stem_d);
+
+            translate([0, 0, snap_stem_h])
+                cylinder(
+                    h=snap_barb_h,
+                    d1=snap_barb_d,
+                    d2=snap_tip_d
+                );
+        }
+
+        // The vertical split lets both halves flex inward during insertion.
+        translate([-snap_slot_w/2, -snap_barb_d, -0.1])
+            cube([
+                snap_slot_w,
+                2*snap_barb_d,
+                snap_stem_h + snap_barb_h + 0.2
+            ]);
     }
 }
 
-module prototype_board_mount(origin, holes) {
-    for (p=holes)
-        prototype_locator_pin(origin[0]+p[0], origin[1]+p[1]);
+// Two diagonal snap posts retain each board; two locator posts align it.
+module screwless_board_mount(origin, holes) {
+    locator_post(origin[0]+holes[0][0], origin[1]+holes[0][1]);
+    snap_post   (origin[0]+holes[1][0], origin[1]+holes[1][1]);
+    snap_post   (origin[0]+holes[2][0], origin[1]+holes[2][1]);
+    locator_post(origin[0]+holes[3][0], origin[1]+holes[3][1]);
 }
 
 module esp_cradle(x, y) {
@@ -331,8 +362,8 @@ module carrier() {
         }
 
         if (mode == "carrier") {
-            prototype_board_mount(comb_pos, comb_holes);
-            prototype_board_mount(hx_pos, hx_holes);
+            screwless_board_mount(comb_pos, comb_holes);
+            screwless_board_mount(hx_pos, hx_holes);
             esp_cradle(esp_pos[0], esp_pos[1]);
         }
 
