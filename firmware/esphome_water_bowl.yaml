@@ -259,7 +259,7 @@ sensor:
       - median:
           window_size: 5
           send_every: 1
-          send_first_at: 3
+          send_first_at: 1
 
     on_value:
       then:
