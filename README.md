@@ -4,7 +4,7 @@ SmartWaterBowl is an ESPHome-based scale for monitoring the amount of water in a
 
 Four load sensors support the bowl platform. Their signals are combined, digitized by an HX711 amplifier, and read by an ESP32-S3 running ESPHome.
 
-> **Current status:** The electronics carrier has been fit-tested and finalized at board revision **V33**. Wiring, firmware, calibration, the bowl platform, and load-sensor mounts are still in development.
+> **Current status:** The electronics carrier has been fit-tested and is currently at board revision **V34**. Wiring, firmware, calibration, the bowl platform, and load-sensor mounts are still in development.
 
 ## System overview
 
@@ -62,7 +62,7 @@ The current carrier source is:
 
 The filename remains stable across revisions. The printed revision is controlled by the `board_version` value inside the SCAD file and is physically raised on the carrier.
 
-The current board revision is **V33**.
+The current board revision is **V34**.
 
 ### Supported hardware
 
@@ -77,6 +77,7 @@ The carrier is designed for the LeMotech 115 × 90 × 55 mm enclosure and holds:
 - Four measured 3.4 mm enclosure mounting holes
 - Locator pins and support pads for both SparkFun boards
 - Captured-rail cradle for the ESP32-S3 SuperMini
+- 0.635 mm ESP32 header-pin channels, sized for measured 0.63 mm-wide pins
 - Optional zip-tie slots
 - Small enclosure-retention bumps in full carrier mode
 - Raised board-revision marking
@@ -114,7 +115,7 @@ Confirm dimensions, tolerances, and material suitability for the actual enclosur
 - [x] Purchase the core electronics and wiring hardware
 - [x] Measure the LeMotech enclosure
 - [x] Design and fit-test the electronics carrier
-- [x] Finalize carrier board revision V33
+- [x] Finalize carrier board revision V34
 - [x] Adopt a stable carrier filename independent of board revision
 - [ ] Finalize the wiring diagram and ESP32 pin assignments
 - [ ] Add the ESPHome configuration
@@ -134,7 +135,7 @@ hardware/enclosure/ChatGPT_water_bowl_electronics_carrier.scad
 The revision number must instead be updated in the SCAD file:
 
 ```scad
-board_version = "V33";
+board_version = "V34";
 ```
 
 This value is rendered directly onto the printed carrier, making the physical revision identifiable without changing repository paths or documentation links.
