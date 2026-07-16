@@ -4,7 +4,7 @@ SmartWaterBowl is an ESPHome-based scale for monitoring the amount of water in a
 
 Four load sensors support the bowl platform. Their signals are combined, digitized by an HX711 amplifier, and read by an ESP32-S3 running ESPHome.
 
-> **Current status:** The electronics carrier has been fit-tested and is currently at board revision **V35**. The load-cell bracket design and repaired STL files are now tracked in the repository. Wiring, firmware, calibration, and the bowl platform are still in development.
+> **Current status:** The electronics carrier has been fit-tested and is currently at board revision **V35**. The load-cell bracket design, repaired STL files, and initial ESPHome firmware are tracked in the repository. Wiring validation, calibration, and the bowl platform are still in development.
 
 ## System overview
 
@@ -48,6 +48,8 @@ Home Assistant
 ## Repository layout
 
 ```text
+firmware/
+└── ChatGPT_esphome_water_bowl.yaml
 hardware/
 ├── enclosure/
 │   └── ChatGPT_water_bowl_electronics_carrier.scad
@@ -59,7 +61,32 @@ hardware/
     └── LICENSE.txt
 ```
 
-Additional directories will be added as the ESPHome configuration, wiring documentation, and bowl-platform design are completed.
+Additional directories will be added as wiring documentation and the bowl-platform design are completed.
+
+## ESPHome firmware
+
+The current ESPHome configuration is:
+
+[`firmware/ChatGPT_esphome_water_bowl.yaml`](firmware/ChatGPT_esphome_water_bowl.yaml)
+
+It currently provides:
+
+- Current water-only weight after subtracting a configurable empty-bowl weight
+- Latest settled refill weight, used as the 100% reference
+- Percentage full based on the most recent qualifying refill
+- Timestamp of the last manual or automatic tare
+- A Home Assistant tare button
+- Automatic tare detection after a drop greater than one pound, confirmed only after the platform remains near zero for five seconds
+- Refill detection requiring approximately eight fluid ounces of added water and a five-second settling period
+
+The initial pin assignment is:
+
+| HX711 signal | ESP32-S3 pin |
+|---|---|
+| DOUT | GPIO5 |
+| CLK | GPIO6 |
+
+The `counts_per_lb` substitution is currently a placeholder and must be replaced after physical calibration. Wi-Fi, API encryption, OTA, and fallback access-point credentials are expected in the ESPHome secrets file.
 
 ## Electronics carrier
 
@@ -140,9 +167,10 @@ The two STL files in this directory have been repaired for reliable slicing whil
 - [x] Adopt a stable carrier filename independent of board revision
 - [x] Select and archive the load-cell bracket design with attribution
 - [x] Repair the bracket STL files for slicing
+- [x] Select initial ESP32 pin assignments
+- [x] Add the initial ESPHome configuration
 - [ ] Integrate the brackets into the bowl platform
-- [ ] Finalize the wiring diagram and ESP32 pin assignments
-- [ ] Add the ESPHome configuration
+- [ ] Validate the wiring and pin assignments on assembled hardware
 - [ ] Calibrate the assembled scale
 - [ ] Add Home Assistant dashboards and automations
 - [ ] Validate long-term stability and water resistance
@@ -186,7 +214,7 @@ Once assembled, the scale will need at least two calibration points:
 3. Use those values to calculate the scale factor in ESPHome.
 4. Verify the result with several known weights across the expected operating range.
 
-The bowl, platform, brackets, and any other permanent hardware should be installed before calibration so their weight can be included in the tare value.
+The scale should be tared with the permanent platform hardware installed but without the removable bowl. Enter the empty bowl's measured weight using the `Bowl Weight` entity so the published weight represents water only.
 
 ## Water protection
 
