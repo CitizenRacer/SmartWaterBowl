@@ -1,0 +1,412 @@
+# ESPHome configuration for the SmartWaterBowl project.
+#
+# Hardware path:
+#   4 load sensors -> SparkFun Load Sensor Combinator -> SparkFun HX711
+#   -> ESP32-S3 SuperMini -> ESPHome/Home Assistant
+#
+# Reported entities:
+#   - Current Weight: water-only weight after subtracting the configured bowl weight
+#   - Max Weight Since Last Refill: settled water weight after the latest refill
+#   - Percent Full: current water weight / latest settled refill weight
+#   - Last Tare: timestamp of the most recent manual or automatic tare
+#   - Bowl Weight: configurable empty-bowl weight
+#   - Tare: Home Assistant button
+
+substitutions:
+  device_name: esphome-water-bowl
+  friendly_name: Water Bowl Scale
+
+  # HX711 connections to the ESP32-S3 SuperMini.
+  hx711_dout_pin: GPIO5
+  hx711_clock_pin: GPIO6
+
+  # Placeholder calibration factor. Replace this after physical calibration:
+  # counts_per_lb = (raw_with_known_weight - raw_at_zero) / known_weight_lb
+  counts_per_lb: "10000.0"
+
+  # A refill must add at least 0.50 lb, approximately 8 US fluid ounces of water.
+  refill_threshold_lb: "0.50"
+
+  # Wait for the rising weight to stop changing before recording the refill.
+  refill_settle_seconds: "5"
+
+  # A drop larger than one pound arms auto-tare detection.
+  auto_tare_drop_lb: "1.0"
+
+  # Auto-tare is confirmed only if the platform then stays near zero.
+  auto_tare_near_zero_lb: "0.25"
+  auto_tare_stable_seconds: "5"
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  on_boot:
+    priority: -100
+    then:
+      # Give networking and restored globals time to initialize, then publish
+      # values that do not otherwise update until the first valid HX711 sample.
+      - delay: 5s
+      - lambda: |-
+          id(max_weight_sensor).publish_state(id(max_weight_lb));
+          id(last_tare_sensor).publish_state(id(last_tare_text));
+
+esp32:
+  # The SuperMini is compatible with the generic ESP32-S3 DevKit target.
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+
+logger:
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Temporary fallback access point if normal Wi-Fi is unavailable.
+  ap:
+    ssid: "${friendly_name} Fallback"
+    password: !secret fallback_ap_password
+
+captive_portal:
+
+# SNTP time is used to stamp manual and automatic tare events.
+time:
+  - platform: sntp
+    id: network_time
+    timezone: America/Los_Angeles
+
+# Home Assistant setting for the empty bowl's weight. The scale itself is
+# tared with an empty platform; this value is then subtracted from gross weight
+# so all published weight values represent water only.
+number:
+  - platform: template
+    name: Bowl Weight
+    id: bowl_weight
+    icon: mdi:bowl
+    unit_of_measurement: lb
+    device_class: weight
+    entity_category: config
+    min_value: 0
+    max_value: 20
+    step: 0.01
+    mode: box
+    optimistic: true
+    restore_value: true
+    initial_value: 0
+
+# Persistent and transient state used by tare, refill, and percentage logic.
+globals:
+  # Raw HX711 reading corresponding to an empty platform.
+  - id: tare_offset_raw
+    type: float
+    restore_value: yes
+    initial_value: "0.0"
+
+  # Latest published water-only weight.
+  - id: current_weight_lb
+    type: float
+    restore_value: no
+    initial_value: "0.0"
+
+  # Water weight captured after the most recent qualifying refill settles.
+  - id: max_weight_lb
+    type: float
+    restore_value: yes
+    initial_value: "0.0"
+
+  # Prior samples are retained for drop and upward-trend detection.
+  - id: previous_gross_weight_lb
+    type: float
+    restore_value: no
+    initial_value: "NAN"
+
+  - id: previous_water_weight_lb
+    type: float
+    restore_value: no
+    initial_value: "NAN"
+
+  # Human-readable tare timestamp, restored after reboot.
+  - id: last_tare_text
+    type: std::string
+    restore_value: yes
+    max_restore_data_length: 32
+    initial_value: '"Never"'
+
+  # Prevent immediate repeated auto-tares after a tare event.
+  - id: last_tare_millis
+    type: uint32_t
+    restore_value: no
+    initial_value: "0"
+
+  # Refill state: baseline, highest candidate weight, and last increase time.
+  - id: refill_pending
+    type: bool
+    restore_value: no
+    initial_value: "false"
+
+  - id: refill_baseline_lb
+    type: float
+    restore_value: no
+    initial_value: "0.0"
+
+  - id: refill_candidate_lb
+    type: float
+    restore_value: no
+    initial_value: "0.0"
+
+  - id: refill_last_increase_millis
+    type: uint32_t
+    restore_value: no
+    initial_value: "0"
+
+  # Auto-tare state. A large drop arms detection; a stable near-zero reading
+  # confirms that the bowl/platform load was actually removed.
+  - id: auto_tare_pending
+    type: bool
+    restore_value: no
+    initial_value: "false"
+
+  - id: auto_tare_near_zero_since
+    type: uint32_t
+    restore_value: no
+    initial_value: "0"
+
+script:
+  # Shared implementation for manual and automatic tare operations.
+  - id: perform_tare
+    mode: restart
+    parameters:
+      reason: string
+    then:
+      - lambda: |-
+          const float raw = id(hx711_raw).state;
+          if (isnan(raw)) {
+            ESP_LOGW("tare", "Cannot tare: HX711 has no valid reading.");
+            return;
+          }
+
+          // Make the current raw reading the new zero point.
+          id(tare_offset_raw) = raw;
+          id(current_weight_lb) = 0.0f;
+          id(previous_gross_weight_lb) = 0.0f;
+          id(previous_water_weight_lb) = 0.0f;
+          id(max_weight_lb) = 0.0f;
+          id(last_tare_millis) = millis();
+
+          // Cancel any partially detected refill or auto-tare event.
+          id(refill_pending) = false;
+          id(auto_tare_pending) = false;
+          id(auto_tare_near_zero_since) = 0;
+
+          // Store a readable timestamp when network time is available.
+          auto now = id(network_time).now();
+          if (now.is_valid()) {
+            char buffer[32];
+            now.strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S");
+            id(last_tare_text) = buffer;
+          } else {
+            id(last_tare_text) = "Time unavailable";
+          }
+
+          // Immediately reset all Home Assistant entities affected by tare.
+          id(current_weight_sensor).publish_state(0.0f);
+          id(max_weight_sensor).publish_state(0.0f);
+          id(percent_full_sensor).publish_state(0.0f);
+          id(last_tare_sensor).publish_state(id(last_tare_text));
+
+          ESP_LOGI("tare", "Scale tared (%s); raw offset=%.0f",
+                   reason.c_str(), id(tare_offset_raw));
+
+button:
+  # Manual tare control exposed to Home Assistant.
+  - platform: template
+    name: Tare
+    id: tare_button
+    icon: mdi:scale-balance
+    entity_category: config
+    on_press:
+      - script.execute:
+          id: perform_tare
+          reason: "manual"
+
+sensor:
+  # Raw HX711 stream. It remains internal because users care about calibrated
+  # water weight, not ADC counts.
+  - platform: hx711
+    id: hx711_raw
+    dout_pin: ${hx711_dout_pin}
+    clk_pin: ${hx711_clock_pin}
+    gain: 128
+    update_interval: 1s
+    internal: true
+
+    # Median filtering rejects occasional one-sample electrical/mechanical
+    # spikes without adding excessive delay.
+    filters:
+      - median:
+          window_size: 5
+          send_every: 1
+          send_first_at: 3
+
+    on_value:
+      then:
+        - lambda: |-
+            const float scale = ${counts_per_lb};
+            if (scale == 0.0f || isnan(x)) {
+              return;
+            }
+
+            // Convert raw counts into gross pounds relative to the tare point.
+            float gross = (x - id(tare_offset_raw)) / scale;
+            if (fabsf(gross) < 0.02f) {
+              gross = 0.0f;
+            }
+
+            // Remove the configured bowl weight so published values represent
+            // only water. Negative values are clamped to zero.
+            float water = gross - id(bowl_weight).state;
+            if (water < 0.0f) {
+              water = 0.0f;
+            }
+
+            const uint32_t now_ms = millis();
+            const float previous_gross = id(previous_gross_weight_lb);
+            const float previous_water = id(previous_water_weight_lb);
+            const bool have_previous = !isnan(previous_gross);
+            const bool tare_cooldown_over =
+                (now_ms - id(last_tare_millis)) > 10000UL;
+
+            // A sudden loss greater than one pound only arms auto-tare. This
+            // avoids taring immediately when the dog bumps or presses the bowl.
+            if (have_previous &&
+                tare_cooldown_over &&
+                (previous_gross - gross) > ${auto_tare_drop_lb}) {
+              id(auto_tare_pending) = true;
+              id(auto_tare_near_zero_since) = 0;
+              ESP_LOGI("tare",
+                       "Auto-tare armed after drop from %.3f lb to %.3f lb",
+                       previous_gross, gross);
+            }
+
+            // Confirm auto-tare only when the gross load remains near an empty
+            // platform for the configured stability period.
+            if (id(auto_tare_pending)) {
+              if (fabsf(gross) <= ${auto_tare_near_zero_lb}) {
+                if (id(auto_tare_near_zero_since) == 0) {
+                  id(auto_tare_near_zero_since) = now_ms;
+                } else if ((now_ms - id(auto_tare_near_zero_since)) >=
+                           (${auto_tare_stable_seconds} * 1000UL)) {
+                  ESP_LOGI("tare",
+                           "Auto-tare confirmed after near-zero stability.");
+                  id(perform_tare)->execute("automatic bowl removal");
+                  return;
+                }
+              } else {
+                // Weight returning means the event was probably temporary.
+                id(auto_tare_near_zero_since) = 0;
+                if (gross > ${auto_tare_near_zero_lb} + 0.5f) {
+                  id(auto_tare_pending) = false;
+                }
+              }
+            }
+
+            // Publish the latest water-only measurement.
+            id(current_weight_lb) = water;
+            id(current_weight_sensor).publish_state(water);
+
+            // Refill detection begins with any credible upward trend. It is
+            // committed only when the total increase reaches about 8 fl oz and
+            // the reading has stopped increasing for several seconds.
+            if (!isnan(previous_water)) {
+              if (!id(refill_pending) && water > previous_water + 0.02f) {
+                id(refill_pending) = true;
+                id(refill_baseline_lb) = previous_water;
+                id(refill_candidate_lb) = water;
+                id(refill_last_increase_millis) = now_ms;
+              } else if (id(refill_pending) &&
+                         water > id(refill_candidate_lb) + 0.02f) {
+                id(refill_candidate_lb) = water;
+                id(refill_last_increase_millis) = now_ms;
+              }
+
+              if (id(refill_pending)) {
+                const float refill_gain =
+                    id(refill_candidate_lb) - id(refill_baseline_lb);
+                const bool settled =
+                    (now_ms - id(refill_last_increase_millis)) >=
+                    (${refill_settle_seconds} * 1000UL);
+
+                if (settled) {
+                  if (refill_gain >= ${refill_threshold_lb}) {
+                    // The latest settled refill defines 100% full. This is more
+                    // useful than retaining an all-time maximum because refill
+                    // amounts may vary from day to day.
+                    id(max_weight_lb) = id(refill_candidate_lb);
+                    id(max_weight_sensor).publish_state(id(max_weight_lb));
+                    ESP_LOGI("refill",
+                             "Refill recorded: %.3f lb water, gain %.3f lb",
+                             id(max_weight_lb), refill_gain);
+                  }
+                  id(refill_pending) = false;
+                }
+              }
+            }
+
+            // Calculate percentage relative to the latest settled refill and
+            // clamp it to the range Home Assistant users expect.
+            float percent = 0.0f;
+            if (id(max_weight_lb) > 0.01f) {
+              percent = 100.0f * water / id(max_weight_lb);
+              percent = std::max(0.0f, std::min(100.0f, percent));
+            }
+            id(percent_full_sensor).publish_state(percent);
+
+            // Save this sample for the next iteration's change detection.
+            id(previous_gross_weight_lb) = gross;
+            id(previous_water_weight_lb) = water;
+
+  # Water-only weight currently in the bowl.
+  - platform: template
+    name: Current Weight
+    id: current_weight_sensor
+    unit_of_measurement: lb
+    device_class: weight
+    state_class: measurement
+    accuracy_decimals: 2
+    update_interval: never
+
+  # Water-only weight recorded after the latest qualifying refill settled.
+  - platform: template
+    name: Max Weight Since Last Refill
+    id: max_weight_sensor
+    unit_of_measurement: lb
+    device_class: weight
+    state_class: measurement
+    accuracy_decimals: 2
+    update_interval: never
+
+  # Current water divided by the latest settled refill amount.
+  - platform: template
+    name: Percent Full
+    id: percent_full_sensor
+    unit_of_measurement: "%"
+    state_class: measurement
+    accuracy_decimals: 1
+    update_interval: never
+
+text_sensor:
+  # Timestamp of the most recent successful tare operation.
+  - platform: template
+    name: Last Tare
+    id: last_tare_sensor
+    icon: mdi:clock-outline
+    entity_category: diagnostic
+    update_interval: never
