@@ -4,7 +4,7 @@ SmartWaterBowl is an ESPHome-based scale for monitoring the amount of water in a
 
 Four load sensors support the bowl platform. Their signals are combined, digitized by an HX711 amplifier, and read by an ESP32-S3 running ESPHome.
 
-> **Current status:** The enclosure fit and ESP32 cradle fit were physically verified in earlier revisions, including the V35 ESP32 geometry retained in the current **V37** source. The load-cell bracket design, repaired STL files, and initial ESPHome firmware are tracked in the repository. V37 still needs a physical print check, and wiring validation, calibration, and the bowl platform remain in development.
+> **Current status:** The enclosure fit and ESP32 cradle fit were physically verified in earlier revisions, including the V35 ESP32 geometry retained in the current **V38** source. V38 enlarges the SparkFun-board thread-forming pilot holes for M3 screws and still needs a physical print check. The load-cell bracket design, repaired STL files, and initial ESPHome firmware are tracked in the repository; wiring validation, calibration, and the bowl platform remain in development.
 
 ## System overview
 
@@ -97,7 +97,7 @@ The current carrier source is:
 
 The filename remains stable across revisions. The printed revision is controlled by the `board_version` value inside the SCAD file and is physically raised on the carrier.
 
-The current board revision is **V37**.
+The current board revision is **V38**.
 
 ### Supported hardware
 
@@ -112,7 +112,7 @@ The carrier is designed for the LeMotech 115 × 90 × 55 mm enclosure, Amazon AS
 - Four measured 3.4 mm enclosure mounting holes
 - Four support locations per SparkFun board
 - Two diagonal M3 screw bosses and two diagonal locator pins per SparkFun board
-- Printed 2.55 mm pilot holes for M3 screws, so no drilling is required
+- Printed 2.80 mm thread-forming pilot holes for M3 screws, so no drilling is required
 - Pilot holes extend 1.0 mm into the 2.0 mm carrier base while leaving a 1.0 mm floor
 - Captured-rail cradle for the ESP32-S3 SuperMini
 - Physically verified V35 ESP32 cradle position preserved unchanged
@@ -122,11 +122,13 @@ The carrier is designed for the LeMotech 115 × 90 × 55 mm enclosure, Amazon AS
 - Thin `fit_check` mode for verifying enclosure fit before printing the complete carrier
 - Validation that rejects unsupported `mode` values instead of silently producing an incomplete part
 
-The M3 × 6 mm screws are intended to form threads directly in the printed plastic. Because the boards are not expected to be removed after assembly, this avoids heat-set inserts while still providing positive retention. Tighten the screws only until the boards are secure; excessive torque can strip the printed threads or damage the PCB.
+The M3 × 6 mm screws are intended to form threads directly in the printed plastic. The 2.80 mm holes are thread-forming pilots, not clearance holes: an M3 screw should be driven into them rather than dropping freely through. Because the boards are not expected to be removed after assembly, this avoids heat-set inserts while still providing positive retention. Tighten the screws only until the boards are secure; excessive torque can strip the printed threads or damage the PCB.
+
+V38 increases the pilot-hole diameter from 2.55 mm to 2.80 mm after the V37 print accepted an M2.5 screw but was too tight for the intended M3 fastener. All other V37 dimensions are preserved.
 
 The enclosure mounting-hole coordinates are expressed in the final carrier-local coordinate frame and were adjusted empirically against the enclosure. Changing `wall_clearance` requires revalidating those four coordinates.
 
-V37 removes the previous side-retention bumps because their geometry did not reach the nominal enclosure wall. The carrier is secured by the four enclosure mounting screws.
+The current design omits the earlier side-retention bumps because their geometry did not reach the nominal enclosure wall. The carrier is secured by the four enclosure mounting screws.
 
 ### Generating the carrier
 
@@ -175,16 +177,17 @@ The two STL files in this directory have been repaired for reliable slicing whil
 - [x] Measure the LeMotech enclosure
 - [x] Design and fit-test the electronics carrier
 - [x] Preserve the physically verified V35 ESP32 holder geometry
-- [x] Create carrier board revision V37
+- [x] Create carrier board revision V38
 - [x] Replace ineffective snap tabs with direct-threaded M3 board retention
 - [x] Remove ineffective side-retention bumps
 - [x] Deepen the printed M3 pilot holes while retaining a solid base floor
+- [x] Increase the SparkFun-board pilot holes to 2.80 mm for M3 thread forming
 - [x] Adopt a stable carrier filename independent of board revision
 - [x] Select and archive the load-cell bracket design with attribution
 - [x] Repair the bracket STL files for slicing
 - [x] Select initial ESP32 pin assignments
 - [x] Add the initial ESPHome configuration
-- [ ] Physically print and validate carrier board revision V37
+- [ ] Physically print and validate carrier board revision V38
 - [ ] Integrate the brackets into the bowl platform
 - [ ] Validate the wiring and pin assignments on assembled hardware
 - [ ] Calibrate the assembled scale
@@ -202,7 +205,7 @@ hardware/enclosure/water_bowl_electronics_carrier.scad
 The revision number must instead be updated in the SCAD file:
 
 ```scad
-board_version = "V37";
+board_version = "V38";
 ```
 
 This value is rendered directly onto the printed carrier, making the physical revision identifiable without changing repository paths or documentation links.
