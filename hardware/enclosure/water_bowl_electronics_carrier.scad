@@ -1,13 +1,14 @@
 /*
 ChatGPT ESPHome Water Bowl Scale
-LeMotech 115 x 90 x 55 mm electronics carrier - V36
+LeMotech 115 x 90 x 55 mm electronics carrier - V37
 
-V36 changes from the known-good V34 geometry:
-- Retains the 0.635 mm ESP32 header-pin channels.
-- Retains both pairs of zip-tie slots and all measured enclosure geometry.
-- Replaces the ineffective SparkFun split snap tabs with two diagonal M3 screw bosses per board.
-- Each screw boss includes a 2.55 mm printed pilot hole for threading an M3 machine screw directly into the plastic.
-- The remaining two diagonal board holes use the existing locator pins.
+V37 changes from V36:
+- Removed the ineffective side-retention bumps; the carrier is secured by the four enclosure mounting screws.
+- Extended each 2.55 mm M3 pilot hole 1.0 mm into the base while leaving a 1.0 mm floor.
+- Intended SparkFun-board fastener is an M3 x 6 mm machine screw.
+- Added validation for the two supported output modes.
+- Documented the mounting-hole coordinate frame.
+- Preserved the physically verified V35 ESP32 cradle geometry, 0.635 mm pin channels, zip-tie slots, and measured enclosure geometry.
 */
 
 $fn = 48;  // Number of facets used to approximate circles.
@@ -16,23 +17,13 @@ $fn = 48;  // Number of facets used to approximate circles.
 
 mode = "carrier";  // "carrier" creates the complete part; "fit_check" creates a thin enclosure-fit test.
 
-board_version = "V36";  // Revision text printed on the carrier.
+board_version = "V37";  // Revision text printed on the carrier.
 
 base_t = 2.0;  // Finished carrier plate thickness.
 
 fit_check_t = 1.0;  // Plate thickness in fit-check mode.
 
 wall_clearance = 0.65;  // Clearance removed from each side of the nominal enclosure interior.
-
-retention_bumps = true;  // Enables the four small enclosure-retention bumps.
-
-bump_projection = 0.05;  // Distance each bump projects beyond the nominal carrier edge.
-
-bump_overlap = 0.60;  // Distance each bump overlaps the plate to ensure fusion.
-
-bump_length = 12.0;  // Length of each retention bump.
-
-bump_height = 1.2;  // Height of each retention bump.
 
 finger_holes = false;  // Enables optional finger-removal holes in the end tabs.
 
@@ -48,6 +39,8 @@ mount_holes = true;  // Enables the four measured enclosure mounting holes.
 
 mount_hole_d = 3.40;  // Through-hole diameter for M3 clearance screws.
 
+// Coordinates are in the final carrier-local frame and were adjusted empirically
+// against the enclosure. Changing wall_clearance requires revalidating these points.
 mount_points = [
     [5.98, 93.00],
     [74.54, 93.13],
@@ -58,7 +51,7 @@ mount_points = [
 standoff_h = 5.0;
 standoff_od = 6.4;
 m3_pilot_d = 2.55;
-m3_pilot_depth = standoff_h;
+m3_pilot_into_plate = 1.0;  // Leaves a 1.0 mm floor with the default 2.0 mm base.
 prototype_pin_d = 3.18;
 prototype_pin_h = 3.20;
 prototype_tip_h = 0.60;
@@ -100,6 +93,9 @@ esp_x = 18.034;
 esp_y = 25.4;
 comb_pos = [7.0, 59.46];
 hx_pos = [44.0, 62.0];
+
+// Intentionally preserves the physically verified V35 ESP32 fit. Do not recenter
+// this using the clearance envelope without another physical fit test.
 esp_pos = [(carrier_w-esp_y)/2, 14.0];
 
 comb_holes = [
@@ -148,11 +144,7 @@ module prototype_locator_pin(x, y) {
 }
 
 module direct_m3_screw_boss(x, y) {
-    difference() {
-        support_pad(x, y);
-        translate([x, y, base_t-0.01])
-            cylinder(h=m3_pilot_depth+0.02, d=m3_pilot_d);
-    }
+    support_pad(x, y);
 }
 
 module direct_screw_board_mount(origin, holes) {
@@ -160,6 +152,16 @@ module direct_screw_board_mount(origin, holes) {
     prototype_locator_pin(origin[0]+holes[1][0], origin[1]+holes[1][1]);
     prototype_locator_pin(origin[0]+holes[2][0], origin[1]+holes[2][1]);
     direct_m3_screw_boss(origin[0]+holes[3][0], origin[1]+holes[3][1]);
+}
+
+module m3_pilot_hole(x, y) {
+    translate([x, y, base_t-m3_pilot_into_plate-0.01])
+        cylinder(h=standoff_h+m3_pilot_into_plate+0.02, d=m3_pilot_d);
+}
+
+module direct_screw_pilot_holes(origin, holes) {
+    m3_pilot_hole(origin[0]+holes[0][0], origin[1]+holes[0][1]);
+    m3_pilot_hole(origin[0]+holes[3][0], origin[1]+holes[3][1]);
 }
 
 module esp_cradle(x, y) {
@@ -191,16 +193,6 @@ module zip_tie_slot_pair(x, y, t) {
     translate([x, y+zip_tie_pair_spacing, -0.1]) cube([zip_tie_slot_l, zip_tie_slot_w, t+0.2]);
 }
 
-module side_bump_left(y) {
-    translate([-bump_projection, y, base_t-bump_height])
-        cube([bump_projection+bump_overlap, bump_length, bump_height]);
-}
-
-module side_bump_right(y) {
-    translate([carrier_w-bump_overlap, y, base_t-bump_height])
-        cube([bump_projection+bump_overlap, bump_length, bump_height]);
-}
-
 module plate(t) {
     difference() {
         linear_extrude(height=t) carrier_outline_2d();
@@ -229,25 +221,30 @@ module version_mark(plate_height) {
 }
 
 module carrier() {
+    assert(mode == "carrier" || mode == "fit_check",
+        str("Unsupported mode: ", mode, ". Use \"carrier\" or \"fit_check\"."));
+    assert(m3_pilot_into_plate > 0 && m3_pilot_into_plate < base_t,
+        "m3_pilot_into_plate must be greater than zero and less than base_t.");
+
     t = mode == "fit_check" ? fit_check_t : base_t;
 
-    union() {
-        plate(t);
+    difference() {
+        union() {
+            plate(t);
 
-        if (retention_bumps && mode == "carrier") {
-            side_bump_left(24);
-            side_bump_left(70);
-            side_bump_right(24);
-            side_bump_right(70);
+            if (mode == "carrier") {
+                direct_screw_board_mount(comb_pos, comb_holes);
+                direct_screw_board_mount(hx_pos, hx_holes);
+                esp_cradle(esp_pos[0], esp_pos[1]);
+            }
+
+            version_mark(t);
         }
 
         if (mode == "carrier") {
-            direct_screw_board_mount(comb_pos, comb_holes);
-            direct_screw_board_mount(hx_pos, hx_holes);
-            esp_cradle(esp_pos[0], esp_pos[1]);
+            direct_screw_pilot_holes(comb_pos, comb_holes);
+            direct_screw_pilot_holes(hx_pos, hx_holes);
         }
-
-        version_mark(t);
     }
 }
 
