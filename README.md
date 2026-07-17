@@ -39,7 +39,7 @@ Home Assistant
 | SparkFun Load Sensor Combinator | Combines the four load sensors into one bridge output |
 | SparkFun HX711 Load Cell Amplifier | Digitizes the load-cell signal |
 | ESP32-S3 SuperMini | Runs ESPHome and publishes measurements over Wi-Fi |
-| LeMotech 115 × 90 × 55 mm enclosure | Protects the electronics |
+| LeMotech 115 × 90 × 55 mm enclosure — Amazon ASIN `B0895J3SWL` | Protects the electronics |
 | USB-C panel-mount extension | Provides external power and programming access |
 | PG7 cable glands | Seal the load-sensor cable entries |
 | 22 AWG silicone wire | Internal wiring |
@@ -101,7 +101,7 @@ The current board revision is **V37**.
 
 ### Supported hardware
 
-The carrier is designed for the LeMotech 115 × 90 × 55 mm enclosure and holds:
+The carrier is designed for the LeMotech 115 × 90 × 55 mm enclosure, Amazon ASIN `B0895J3SWL`, and holds:
 
 - SparkFun Load Sensor Combinator
 - SparkFun HX711 Load Cell Amplifier
