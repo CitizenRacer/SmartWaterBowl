@@ -1,15 +1,11 @@
 /*
 ChatGPT ESPHome Water Bowl Scale
-LeMotech 115 x 90 x 55 mm electronics carrier - V37
+LeMotech 115 x 90 x 55 mm electronics carrier - V38
 LeMotech enclosure Amazon ASIN: B0895J3SWL
 
-V37 changes from V36:
-- Removed the ineffective side-retention bumps; the carrier is secured by the four enclosure mounting screws.
-- Extended each 2.55 mm M3 pilot hole 1.0 mm into the base while leaving a 1.0 mm floor.
-- Intended SparkFun-board fastener is an M3 x 6 mm machine screw.
-- Added validation for the two supported output modes.
-- Documented the mounting-hole coordinate frame.
-- Preserved the physically verified V35 ESP32 cradle geometry, 0.635 mm pin channels, zip-tie slots, and measured enclosure geometry.
+V38 change from V37:
+- Increased each SparkFun-board screw pilot from 2.55 mm to 2.80 mm so an M3 x 6 mm machine screw can form threads directly in the printed plastic.
+- Preserved the physically verified V35 ESP32 cradle geometry, 0.635 mm pin channels, zip-tie slots, measured enclosure geometry, and all other V37 dimensions.
 
 Units and coordinate conventions:
 - All dimensions are millimeters unless otherwise noted.
@@ -33,9 +29,8 @@ $fn = 48;  // Facet count for cylinders; higher values look smoother but render 
 // - "fit_check": thin outline plate for checking enclosure fit only.
 mode = "carrier";
 
-// Text physically raised on the printed carrier. Documentation-only edits do not
-// require changing this value because the physical geometry revision remains V37.
-board_version = "V37";
+// Text physically raised on the printed carrier.
+board_version = "V38";
 
 // Thickness of the complete carrier plate in "carrier" mode.
 base_t = 2.0;
@@ -48,7 +43,7 @@ fit_check_t = 1.0;
 // coordinates below do not automatically compensate and must then be revalidated.
 wall_clearance = 0.65;
 
-// Optional circular removal holes near the narrow end tabs. Disabled in V37.
+// Optional circular removal holes near the narrow end tabs. Disabled in V38.
 finger_holes = false;
 
 // Enables the two pairs of through-slots used for optional cable or component zip ties.
@@ -87,8 +82,10 @@ standoff_h = 5.0;
 // Outside diameter of every circular SparkFun support pad / screw boss.
 standoff_od = 6.4;
 
-// Printed pilot-hole diameter for M3 machine screws forming threads directly in plastic.
-m3_pilot_d = 2.55;
+// Printed thread-forming pilot diameter for M3 machine screws.
+// This is intentionally smaller than the screw's 3.0 mm major diameter; the screw
+// forms its own threads during the one-time installation rather than dropping through.
+m3_pilot_d = 2.80;
 
 // Additional pilot-hole depth below the top surface of the 2.0 mm carrier plate.
 // At 1.0 mm this leaves a solid 1.0 mm floor beneath the hole.
