@@ -4,7 +4,7 @@ SmartWaterBowl is an ESPHome-based scale for monitoring the amount of water in a
 
 Four load sensors support the bowl platform. Their signals are combined, digitized by an HX711 amplifier, and read by an ESP32-S3 running ESPHome.
 
-> **Current status:** The electronics carrier has been fit-tested and is currently at board revision **V35**. The load-cell bracket design, repaired STL files, and initial ESPHome firmware are tracked in the repository. Wiring validation, calibration, and the bowl platform are still in development.
+> **Current status:** The electronics carrier has been fit-tested and is currently at board revision **V36**. The load-cell bracket design, repaired STL files, and initial ESPHome firmware are tracked in the repository. Wiring validation, calibration, and the bowl platform are still in development.
 
 ## System overview
 
@@ -44,6 +44,7 @@ Home Assistant
 | PG7 cable glands | Seal the load-sensor cable entries |
 | 22 AWG silicone wire | Internal wiring |
 | JST-PH connectors | Provide disconnectable internal connections |
+| M3 machine screws | Permanently secure the two SparkFun boards directly to printed plastic bosses |
 
 ## Repository layout
 
@@ -96,7 +97,7 @@ The current carrier source is:
 
 The filename remains stable across revisions. The printed revision is controlled by the `board_version` value inside the SCAD file and is physically raised on the carrier.
 
-The current board revision is **V35**.
+The current board revision is **V36**.
 
 ### Supported hardware
 
@@ -109,16 +110,18 @@ The carrier is designed for the LeMotech 115 × 90 × 55 mm enclosure and holds:
 ### Carrier features
 
 - Four measured 3.4 mm enclosure mounting holes
-- Four support pads per SparkFun board
-- Two diagonal split snap-lock posts and two diagonal locator posts per SparkFun board
+- Four support locations per SparkFun board
+- Two diagonal M3 screw bosses and two diagonal locator pins per SparkFun board
+- Printed 2.55 mm pilot holes for M3 screws, so no drilling is required
+- Approximately 5 mm of thread engagement in each printed screw boss
 - Captured-rail cradle for the ESP32-S3 SuperMini
 - 0.635 mm ESP32 header-pin channels, sized for measured 0.63 mm-wide pins
-- Optional zip-tie slots
+- Two pairs of optional zip-tie slots
 - Small enclosure-retention bumps in full carrier mode
 - Raised board-revision marking
 - Thin `fit_check` mode for verifying enclosure fit before printing the complete carrier
 
-The SparkFun snap-lock posts are designed to compress through the PCB mounting holes and spring back out above the board. PETG or ASA is preferable for these flexible features; PLA may make the split posts more brittle.
+The M3 screws are intended to form threads directly in the printed plastic. Because the boards are not expected to be removed after assembly, this avoids heat-set inserts while still providing positive retention. Tighten the screws only until the boards are secure; excessive torque can strip the printed threads or damage the PCB.
 
 ### Generating the carrier
 
@@ -142,8 +145,9 @@ Suggested starting print settings:
 
 - 0.20 mm layer height or finer
 - At least three walls
-- PETG preferred for the flexible SparkFun snap-lock posts
-- ASA is also suitable
+- PLA, PETG, or ASA
+
+PETG or ASA should provide more durable screw threads than brittle PLA, but PLA is acceptable for a one-time installation when the screws are tightened carefully.
 
 Confirm dimensions, tolerances, and material suitability for the actual enclosure and operating environment before committing to a complete build.
 
@@ -163,7 +167,8 @@ The two STL files in this directory have been repaired for reliable slicing whil
 - [x] Purchase the core electronics and wiring hardware
 - [x] Measure the LeMotech enclosure
 - [x] Design and fit-test the electronics carrier
-- [x] Finalize carrier board revision V35
+- [x] Finalize carrier board revision V36
+- [x] Replace ineffective snap tabs with direct-threaded M3 board retention
 - [x] Adopt a stable carrier filename independent of board revision
 - [x] Select and archive the load-cell bracket design with attribution
 - [x] Repair the bracket STL files for slicing
@@ -186,7 +191,7 @@ hardware/enclosure/water_bowl_electronics_carrier.scad
 The revision number must instead be updated in the SCAD file:
 
 ```scad
-board_version = "V35";
+board_version = "V36";
 ```
 
 This value is rendered directly onto the printed carrier, making the physical revision identifiable without changing repository paths or documentation links.
