@@ -1,6 +1,7 @@
 /*
 ChatGPT ESPHome Water Bowl Scale
 LeMotech 115 x 90 x 55 mm electronics carrier - V37
+LeMotech enclosure Amazon ASIN: B0895J3SWL
 
 V37 changes from V36:
 - Removed the ineffective side-retention bumps; the carrier is secured by the four enclosure mounting screws.
