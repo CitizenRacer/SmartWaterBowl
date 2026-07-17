@@ -20,7 +20,7 @@ Fit-sensitive geometry:
 - Do not alter those values without another physical fit test.
 */
 
-$fn = 48;  // Facet count for cylinders; higher values look smoother but render more slowly.
+$fn = 96;  // Facet count for cylinders; higher values look smoother but render more slowly.
 
 // ---------- Output and plate settings ----------
 
