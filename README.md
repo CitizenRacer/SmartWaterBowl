@@ -1,10 +1,10 @@
 # SmartWaterBowl
 
-SmartWaterBowl is an ESPHome-based scale for monitoring the amount of water in a shared dog bowl and publishing the measurements to Home Assistant.
+SmartWaterBowl is an ESPHome-based scale for monitoring the amount of water in a shared dog bowl and publishing the measurements to Home Assistant. The repository also includes an optional clip-on fountain-tube mount for circulating water back into the bowl.
 
 Four load sensors support the bowl platform. Their signals are combined, digitized by an HX711 amplifier, and read by an ESP32-S3 running ESPHome.
 
-> **Current status:** The enclosure fit and ESP32 cradle fit were physically verified in earlier revisions, including the V35 ESP32 geometry retained in the current **V38** source. V38 enlarges the SparkFun-board thread-forming pilot holes for M3 screws and still needs a physical print check. The load-cell bracket design, repaired STL files, and initial ESPHome firmware are tracked in the repository; wiring validation, calibration, and the bowl platform remain in development.
+> **Current status:** The enclosure fit and ESP32 cradle fit were physically verified in earlier revisions, including the V35 ESP32 geometry retained in the current **V38** source. V38 enlarges the SparkFun-board thread-forming pilot holes for M3 screws and still needs a physical print check. The load-cell bracket design, repaired STL files, initial ESPHome firmware, and parametric fountain-tube mount are tracked in the repository; wiring validation, calibration, the bowl platform, and physical validation of the fountain mount remain in development.
 
 ## System overview
 
@@ -29,6 +29,7 @@ Home Assistant
 - Publish measurements to Home Assistant through ESPHome.
 - Keep powered electronics protected in a separate enclosure.
 - Make the mechanical and electronics mounting parts reproducible with a 3D printer.
+- Support an optional low-voltage recirculating fountain with a removable, rigidly supported tube path.
 
 ## Hardware
 
@@ -45,6 +46,7 @@ Home Assistant
 | 22 AWG silicone wire | Internal wiring |
 | JST-PH connectors | Provide disconnectable internal connections |
 | M3 × 6 mm machine screws | Permanently secure the two SparkFun boards directly to printed plastic bosses |
+| Optional low-voltage submersible pump and 10 mm OD tubing | Recirculate water through the clip-on fountain mount |
 
 ## Repository layout
 
@@ -54,6 +56,8 @@ firmware/
 hardware/
 ├── enclosure/
 │   └── water_bowl_electronics_carrier.scad
+├── fountain/
+│   └── water_bowl_fountain_mount.scad
 └── loadcell-brackets/
     ├── 50kgLoadcell-VersionF.stl
     ├── 50kgLoadcell-VersionF-2021.stl
@@ -170,6 +174,27 @@ The selected bracket design is **50kg Loadcell Bracket versionF** by Thingiverse
 
 The two STL files in this directory have been repaired for reliable slicing while retaining their original filenames. The original README, license, source CAD files, preview images, and project fit-test photos remain beside them so attribution and design context stay together.
 
+## Fountain tube mount
+
+The optional fountain mount source is:
+
+[`hardware/fountain/water_bowl_fountain_mount.scad`](hardware/fountain/water_bowl_fountain_mount.scad)
+
+It is a parametric clip-on guide for nominal 10 mm OD flexible tubing. The tube follows an open candy-cane-shaped trough, rises 100 mm above the bowl rim, curves over the bowl, and points the outlet downward and inward. The groove is cut through at both ends so the tubing can sit at full depth throughout the guide. Three pairs of slots accept small zip ties for removable retention.
+
+The key dimensions near the top of the file are:
+
+```scad
+tube_od = 10.0;
+bowl_rim_thickness = 6.0;
+riser_height_above_rim = 100.0;
+bend_radius = 22.0;
+outlet_inward_angle = 25.0;
+outlet_length = 33.0;
+```
+
+Measure the actual bowl rim and tubing before printing. Print the mount with its broad flat rear face on the build plate and the tube groove facing upward. The model is intended to print without supports. PETG or ASA is preferred for durability around water and repeated clipping, but material and tubing suitability for the intended water-contact environment must be evaluated before use.
+
 ## Current progress
 
 - [x] Select the load sensors and electronics
@@ -187,7 +212,9 @@ The two STL files in this directory have been repaired for reliable slicing whil
 - [x] Repair the bracket STL files for slicing
 - [x] Select initial ESP32 pin assignments
 - [x] Add the initial ESPHome configuration
+- [x] Add the parametric clip-on fountain tube mount source
 - [ ] Physically print and validate carrier board revision V38
+- [ ] Physically print and validate the fountain mount against the bowl and tubing
 - [ ] Integrate the brackets into the bowl platform
 - [ ] Validate the wiring and pin assignments on assembled hardware
 - [ ] Calibrate the assembled scale
@@ -209,6 +236,12 @@ board_version = "V38";
 ```
 
 This value is rendered directly onto the printed carrier, making the physical revision identifiable without changing repository paths or documentation links.
+
+The fountain mount also uses a stable descriptive path:
+
+```text
+hardware/fountain/water_bowl_fountain_mount.scad
+```
 
 ## Repository maintenance
 
@@ -239,4 +272,4 @@ The scale should be tared with the permanent platform hardware installed but wit
 
 This project places powered electronics near a water bowl. Use only low-voltage power, route cables through sealed glands, provide strain relief, and keep the electronics enclosure physically separated from areas where spilled water can collect.
 
-The printed electronics carrier and load-cell brackets are mechanical parts and are not themselves waterproof barriers.
+The printed electronics carrier, load-cell brackets, and fountain mount are mechanical parts and are not themselves waterproof barriers. Use pump, tubing, fasteners, and printed materials suitable for the intended water-contact environment, and inspect and clean the fountain components regularly.
