@@ -4,7 +4,7 @@ SmartWaterBowl is an ESPHome-based scale for monitoring the amount of water in a
 
 Four load sensors support the bowl platform. Their signals are combined, digitized by an HX711 amplifier, and read by an ESP32-S3 running ESPHome.
 
-> **Current status:** The enclosure fit and ESP32 cradle fit were physically verified in earlier revisions, including the V35 ESP32 geometry retained in the current **V39** source. V39 relieves the board-facing side of all four HX711 support pads so soldered underside pins do not prevent the amplifier board from sitting flush. The load-cell bracket design, repaired STL files, initial ESPHome firmware, and parametric fountain-tube mount are tracked in the repository; V39 physical validation, wiring validation, calibration, the bowl platform, and physical validation of the fountain mount remain in development.
+> **Current status:** The enclosure fit and ESP32 cradle fit were physically verified in earlier revisions, including the V35 ESP32 geometry retained in the current **V40** source. V40 replaces the diagonal HX711 support reliefs with horizontal east-west flats: the southern support pair faces north and the northern support pair faces south. The load-cell bracket design, repaired STL files, initial ESPHome firmware, and parametric fountain-tube mount are tracked in the repository; V40 physical validation, wiring validation, calibration, the bowl platform, and physical validation of the fountain mount remain in development.
 
 ## System overview
 
@@ -101,7 +101,7 @@ The current carrier source is:
 
 The filename remains stable across revisions. The printed revision is controlled by the `board_version` value inside the SCAD file and is physically raised on the carrier.
 
-The current board revision is **V39**.
+The current board revision is **V40**.
 
 ### Supported hardware
 
@@ -118,7 +118,9 @@ The carrier is designed for the LeMotech 115 × 90 × 55 mm enclosure, Amazon AS
 - Two diagonal M3 screw bosses and two diagonal locator pins per SparkFun board
 - Printed 2.80 mm thread-forming pilot holes for M3 screws, so no drilling is required
 - Pilot holes extend 1.0 mm into the 2.0 mm carrier base while leaving a 1.0 mm floor
-- Board-facing relief on all four HX711 support pads for clearance around soldered underside pins
+- East-west relief flats on all four HX711 support pads for clearance around soldered underside pins
+- North-facing flats on the two southern HX711 supports and south-facing flats on the two northern supports
+- Each HX711 flat is tangent to the 3.18 mm central post envelope
 - Fully round, unchanged support pads for the Load Sensor Combinator
 - Captured-rail cradle for the ESP32-S3 SuperMini
 - Physically verified V35 ESP32 cradle position preserved unchanged
@@ -132,7 +134,7 @@ The M3 × 6 mm screws are intended to form threads directly in the printed plast
 
 V38 increased the pilot-hole diameter from 2.55 mm to 2.80 mm after the V37 print accepted an M2.5 screw but was too tight for the intended M3 fastener.
 
-V39 changes only the four HX711 support pads. The circular cap facing the PCB center is removed from each 6.4 mm pad, producing a flat face tangent to the 3.18 mm central post envelope. The outer portion of each support remains full width. The Load Sensor Combinator supports, board coordinates, support heights, M3 pilots, locator pins, ESP32 cradle, zip-tie slots, and enclosure geometry remain unchanged.
+V39 introduced reliefs on all four HX711 support pads, but oriented each flat diagonally toward the board center. V40 corrects the orientation without changing the relief depth: both flats on the southern row run east-west and face north, while both flats on the northern row run east-west and face south. The Load Sensor Combinator supports, board coordinates, support heights, M3 pilots, locator pins, ESP32 cradle, zip-tie slots, and enclosure geometry remain unchanged.
 
 The enclosure mounting-hole coordinates are expressed in the final carrier-local coordinate frame and were adjusted empirically against the enclosure. Changing `wall_clearance` requires revalidating those four coordinates.
 
@@ -206,12 +208,13 @@ Measure the actual bowl rim and tubing before printing. Print the mount with its
 - [x] Measure the LeMotech enclosure
 - [x] Design and fit-test the electronics carrier
 - [x] Preserve the physically verified V35 ESP32 holder geometry
-- [x] Create carrier board revision V39
+- [x] Create carrier board revision V40
 - [x] Replace ineffective snap tabs with direct-threaded M3 board retention
 - [x] Remove ineffective side-retention bumps
 - [x] Deepen the printed M3 pilot holes while retaining a solid base floor
 - [x] Increase the SparkFun-board pilot holes to 2.80 mm for M3 thread forming
-- [x] Relieve all four HX711 supports for soldered underside-pin clearance
+- [x] Add HX711 support relief for soldered underside-pin clearance
+- [x] Orient the southern HX711 reliefs north and the northern reliefs south
 - [x] Keep the Load Sensor Combinator supports unchanged
 - [x] Adopt a stable carrier filename independent of board revision
 - [x] Select and archive the load-cell bracket design with attribution
@@ -219,7 +222,7 @@ Measure the actual bowl rim and tubing before printing. Print the mount with its
 - [x] Select initial ESP32 pin assignments
 - [x] Add the initial ESPHome configuration
 - [x] Add the parametric clip-on fountain tube mount source
-- [ ] Physically print and validate carrier board revision V39
+- [ ] Physically print and validate carrier board revision V40
 - [ ] Physically print and validate the fountain mount against the bowl and tubing
 - [ ] Integrate the brackets into the bowl platform
 - [ ] Validate the wiring and pin assignments on assembled hardware
@@ -238,7 +241,7 @@ hardware/enclosure/water_bowl_electronics_carrier.scad
 The revision number must instead be updated in the SCAD file:
 
 ```scad
-board_version = "V39";
+board_version = "V40";
 ```
 
 This value is rendered directly onto the printed carrier, making the physical revision identifiable without changing repository paths or documentation links.
