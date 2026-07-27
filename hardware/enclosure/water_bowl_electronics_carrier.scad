@@ -1,16 +1,18 @@
 /*
 ChatGPT ESPHome Water Bowl Scale
-LeMotech 115 x 90 x 55 mm electronics carrier - V39
+LeMotech 115 x 90 x 55 mm electronics carrier - V40
 LeMotech enclosure Amazon ASIN: B0895J3SWL
 
-V39 change from V38:
-- Relieved the inward-facing side of all four HX711 support pads so the board can sit flush above its soldered underside pins.
-- Each relieved face is tangent to the outside of the 3.18 mm central post envelope; the Load Sensor Combinator supports and all other V38 geometry are unchanged.
+V40 change from V39:
+- Replaced the diagonal HX711 support-pad reliefs with east-west flat faces.
+- The two southern HX711 supports have north-facing flats; the two northern supports have south-facing flats.
+- Each flat is tangent to the outside of the 3.18 mm central post envelope.
+- The Load Sensor Combinator supports and all other V39 geometry are unchanged.
 
 Units and coordinate conventions:
 - All dimensions are millimeters unless otherwise noted.
-- X increases from the carrier's left edge to its right edge.
-- Y increases from the carrier's lower end toward its upper end.
+- X increases from the carrier's left edge to its right edge (west to east).
+- Y increases from the carrier's lower end toward its upper end (south to north).
 - Z increases upward from the bottom face of the printed carrier.
 - Board positions and enclosure mounting-hole coordinates use the final carrier-local frame.
 
@@ -30,7 +32,7 @@ $fn = 96;  // Facet count for cylinders; higher values look smoother but render 
 mode = "carrier";
 
 // Text physically raised on the printed carrier.
-board_version = "V39";
+board_version = "V40";
 
 // Thickness of the complete carrier plate in "carrier" mode.
 base_t = 2.0;
@@ -43,7 +45,7 @@ fit_check_t = 1.0;
 // coordinates below do not automatically compensate and must then be revalidated.
 wall_clearance = 0.65;
 
-// Optional circular removal holes near the narrow end tabs. Disabled in V39.
+// Optional circular removal holes near the narrow end tabs. Disabled in V40.
 finger_holes = false;
 
 // Enables the two pairs of through-slots used for optional cable or component zip ties.
@@ -206,7 +208,6 @@ esp_y = 25.4;
 // Lower-left local origin of each SparkFun board footprint in carrier coordinates.
 comb_pos = [7.0, 59.46];
 hx_pos = [44.0, 62.0];
-hx_center = [hx_pos[0]+hx_w/2, hx_pos[1]+hx_h/2];
 
 // Intentionally preserves the physically verified V35 ESP32 fit. This position uses
 // the historical cradle origin rather than recentering the clearance envelope.
@@ -223,6 +224,7 @@ comb_holes = [
 ];
 
 // SparkFun HX711 mounting-hole centers relative to hx_pos.
+// Hole order: lower-left, upper-left, lower-right, upper-right.
 // Indices 0 and 3 receive M3 screw bosses; indices 1 and 2 receive locator pins.
 hx_holes = [
     [2.54, 2.54],
@@ -230,6 +232,10 @@ hx_holes = [
     [27.94, 2.54],
     [27.94, 20.32]
 ];
+
+// Relief-face direction for each HX711 support in the same order as hx_holes.
+// The lower (southern) row faces north; the upper (northern) row faces south.
+hx_relief_faces = ["north", "south", "north", "south"];
 
 // ---------- Geometry modules ----------
 
@@ -251,26 +257,41 @@ module carrier_outline_2d() {
     ]);
 }
 
-// Adds one PCB support pad. Passing relief_center clips only the board-facing cap.
-module support_pad(x, y, relief_center=undef) {
-    if (is_undef(relief_center)) {
+// Adds one PCB support pad.
+// relief_face may be undef for a complete circular pad, "north" for a north-facing
+// east-west flat, or "south" for a south-facing east-west flat.
+module support_pad(x, y, relief_face=undef) {
+    if (is_undef(relief_face)) {
         translate([x, y, base_t])
             cylinder(h=standoff_h, d=standoff_od);
     } else {
-        outward_angle = atan2(y-relief_center[1], x-relief_center[0]);
+        assert(relief_face == "north" || relief_face == "south",
+            str("Unsupported relief face: ", relief_face, ". Use north, south, or undef."));
+
         translate([x, y, base_t])
-            rotate([0, 0, outward_angle])
-                intersection() {
-                    cylinder(h=standoff_h, d=standoff_od);
-                    translate([-hx_support_relief_d/2, -standoff_od, -0.01])
-                        cube([2*standoff_od, 2*standoff_od, standoff_h+0.02]);
+            intersection() {
+                cylinder(h=standoff_h, d=standoff_od);
+
+                if (relief_face == "north") {
+                    // Keep the pad south of y=+radius, creating a north-facing flat.
+                    translate([-standoff_od, -standoff_od, -0.01])
+                        cube([2*standoff_od,
+                              standoff_od + hx_support_relief_d/2,
+                              standoff_h + 0.02]);
+                } else {
+                    // Keep the pad north of y=-radius, creating a south-facing flat.
+                    translate([-standoff_od, -hx_support_relief_d/2, -0.01])
+                        cube([2*standoff_od,
+                              standoff_od + hx_support_relief_d/2,
+                              standoff_h + 0.02]);
                 }
+            }
     }
 }
 
 // Adds a support pad and tapered locator pin for a non-threaded PCB mounting hole.
-module prototype_locator_pin(x, y, relief_center=undef) {
-    support_pad(x, y, relief_center);
+module prototype_locator_pin(x, y, relief_face=undef) {
+    support_pad(x, y, relief_face);
     translate([x, y, base_t + standoff_h]) {
         cylinder(h=prototype_pin_h-prototype_tip_h, d=prototype_pin_d);
         translate([0, 0, prototype_pin_h-prototype_tip_h])
@@ -279,16 +300,20 @@ module prototype_locator_pin(x, y, relief_center=undef) {
 }
 
 // Adds the solid boss used at an M3 screw location. Pilot holes are cut later.
-module direct_m3_screw_boss(x, y, relief_center=undef) {
-    support_pad(x, y, relief_center);
+module direct_m3_screw_boss(x, y, relief_face=undef) {
+    support_pad(x, y, relief_face);
 }
 
 // Places two diagonal M3 bosses and two diagonal locator pins.
-module direct_screw_board_mount(origin, holes, relief_center=undef) {
-    direct_m3_screw_boss(origin[0]+holes[0][0], origin[1]+holes[0][1], relief_center);
-    prototype_locator_pin(origin[0]+holes[1][0], origin[1]+holes[1][1], relief_center);
-    prototype_locator_pin(origin[0]+holes[2][0], origin[1]+holes[2][1], relief_center);
-    direct_m3_screw_boss(origin[0]+holes[3][0], origin[1]+holes[3][1], relief_center);
+// relief_faces follows the same four-element order as holes.
+module direct_screw_board_mount(origin, holes, relief_faces=[undef, undef, undef, undef]) {
+    assert(len(holes) == 4 && len(relief_faces) == 4,
+        "Board mounts require four holes and four relief-face entries.");
+
+    direct_m3_screw_boss(origin[0]+holes[0][0], origin[1]+holes[0][1], relief_faces[0]);
+    prototype_locator_pin(origin[0]+holes[1][0], origin[1]+holes[1][1], relief_faces[1]);
+    prototype_locator_pin(origin[0]+holes[2][0], origin[1]+holes[2][1], relief_faces[2]);
+    direct_m3_screw_boss(origin[0]+holes[3][0], origin[1]+holes[3][1], relief_faces[3]);
 }
 
 // Defines one M3 pilot-hole cutting solid. It passes through the full 5 mm boss and
@@ -386,7 +411,7 @@ module carrier() {
 
             if (mode == "carrier") {
                 direct_screw_board_mount(comb_pos, comb_holes);
-                direct_screw_board_mount(hx_pos, hx_holes, hx_center);
+                direct_screw_board_mount(hx_pos, hx_holes, hx_relief_faces);
                 esp_cradle(esp_pos[0], esp_pos[1]);
             }
 
