@@ -1,11 +1,11 @@
 /*
 ChatGPT ESPHome Water Bowl Scale
-LeMotech 115 x 90 x 55 mm electronics carrier - V38
+LeMotech 115 x 90 x 55 mm electronics carrier - V39
 LeMotech enclosure Amazon ASIN: B0895J3SWL
 
-V38 change from V37:
-- Increased each SparkFun-board screw pilot from 2.55 mm to 2.80 mm so an M3 x 6 mm machine screw can form threads directly in the printed plastic.
-- Preserved the physically verified V35 ESP32 cradle geometry, 0.635 mm pin channels, zip-tie slots, measured enclosure geometry, and all other V37 dimensions.
+V39 change from V38:
+- Relieved the inward-facing side of all four HX711 support pads so the board can sit flush above its soldered underside pins.
+- Each relieved face is tangent to the outside of the 3.18 mm central post envelope; the Load Sensor Combinator supports and all other V38 geometry are unchanged.
 
 Units and coordinate conventions:
 - All dimensions are millimeters unless otherwise noted.
@@ -30,7 +30,7 @@ $fn = 96;  // Facet count for cylinders; higher values look smoother but render 
 mode = "carrier";
 
 // Text physically raised on the printed carrier.
-board_version = "V38";
+board_version = "V39";
 
 // Thickness of the complete carrier plate in "carrier" mode.
 base_t = 2.0;
@@ -43,7 +43,7 @@ fit_check_t = 1.0;
 // coordinates below do not automatically compensate and must then be revalidated.
 wall_clearance = 0.65;
 
-// Optional circular removal holes near the narrow end tabs. Disabled in V38.
+// Optional circular removal holes near the narrow end tabs. Disabled in V39.
 finger_holes = false;
 
 // Enables the two pairs of through-slots used for optional cable or component zip ties.
@@ -102,6 +102,9 @@ prototype_tip_h = 0.60;
 
 // Diameter at the narrow top end of each locator-pin taper.
 prototype_tip_d = 2.75;
+
+// The HX711 pad relief stops at a tangent to this narrow central envelope.
+hx_support_relief_d = prototype_pin_d;
 
 // ---------- ESP32-S3 SuperMini cradle ----------
 
@@ -203,6 +206,7 @@ esp_y = 25.4;
 // Lower-left local origin of each SparkFun board footprint in carrier coordinates.
 comb_pos = [7.0, 59.46];
 hx_pos = [44.0, 62.0];
+hx_center = [hx_pos[0]+hx_w/2, hx_pos[1]+hx_h/2];
 
 // Intentionally preserves the physically verified V35 ESP32 fit. This position uses
 // the historical cradle origin rather than recentering the clearance envelope.
@@ -247,15 +251,26 @@ module carrier_outline_2d() {
     ]);
 }
 
-// Adds one circular PCB support pad at carrier coordinate [x,y].
-module support_pad(x, y) {
-    translate([x, y, base_t])
-        cylinder(h=standoff_h, d=standoff_od);
+// Adds one PCB support pad. Passing relief_center clips only the board-facing cap.
+module support_pad(x, y, relief_center=undef) {
+    if (is_undef(relief_center)) {
+        translate([x, y, base_t])
+            cylinder(h=standoff_h, d=standoff_od);
+    } else {
+        outward_angle = atan2(y-relief_center[1], x-relief_center[0]);
+        translate([x, y, base_t])
+            rotate([0, 0, outward_angle])
+                intersection() {
+                    cylinder(h=standoff_h, d=standoff_od);
+                    translate([-hx_support_relief_d/2, -standoff_od, -0.01])
+                        cube([2*standoff_od, 2*standoff_od, standoff_h+0.02]);
+                }
+    }
 }
 
 // Adds a support pad and tapered locator pin for a non-threaded PCB mounting hole.
-module prototype_locator_pin(x, y) {
-    support_pad(x, y);
+module prototype_locator_pin(x, y, relief_center=undef) {
+    support_pad(x, y, relief_center);
     translate([x, y, base_t + standoff_h]) {
         cylinder(h=prototype_pin_h-prototype_tip_h, d=prototype_pin_d);
         translate([0, 0, prototype_pin_h-prototype_tip_h])
@@ -263,19 +278,17 @@ module prototype_locator_pin(x, y) {
     }
 }
 
-// Adds the solid circular boss used at an M3 screw location. Pilot holes are cut
-// later from the completed union so they remain open through any overlapping solids.
-module direct_m3_screw_boss(x, y) {
-    support_pad(x, y);
+// Adds the solid boss used at an M3 screw location. Pilot holes are cut later.
+module direct_m3_screw_boss(x, y, relief_center=undef) {
+    support_pad(x, y, relief_center);
 }
 
-// Places two diagonal M3 bosses at hole indices 0 and 3, and two diagonal locator
-// pins at indices 1 and 2. Reordering a board's hole array changes this assignment.
-module direct_screw_board_mount(origin, holes) {
-    direct_m3_screw_boss(origin[0]+holes[0][0], origin[1]+holes[0][1]);
-    prototype_locator_pin(origin[0]+holes[1][0], origin[1]+holes[1][1]);
-    prototype_locator_pin(origin[0]+holes[2][0], origin[1]+holes[2][1]);
-    direct_m3_screw_boss(origin[0]+holes[3][0], origin[1]+holes[3][1]);
+// Places two diagonal M3 bosses and two diagonal locator pins.
+module direct_screw_board_mount(origin, holes, relief_center=undef) {
+    direct_m3_screw_boss(origin[0]+holes[0][0], origin[1]+holes[0][1], relief_center);
+    prototype_locator_pin(origin[0]+holes[1][0], origin[1]+holes[1][1], relief_center);
+    prototype_locator_pin(origin[0]+holes[2][0], origin[1]+holes[2][1], relief_center);
+    direct_m3_screw_boss(origin[0]+holes[3][0], origin[1]+holes[3][1], relief_center);
 }
 
 // Defines one M3 pilot-hole cutting solid. It passes through the full 5 mm boss and
@@ -356,13 +369,14 @@ module version_mark(plate_height) {
             text(board_version, size=version_text_size, font=version_text_font, halign="center", valign="bottom");
 }
 
-// Assembles the selected output. Pilot holes are subtracted from the complete union
-// so the final holes remain open through the SparkFun screw bosses.
+// Assembles the selected output. Pilot holes are subtracted from the complete union.
 module carrier() {
     assert(mode == "carrier" || mode == "fit_check",
         str("Unsupported mode: ", mode, ". Use \"carrier\" or \"fit_check\"."));
     assert(m3_pilot_into_plate > 0 && m3_pilot_into_plate < base_t,
         "m3_pilot_into_plate must be greater than zero and less than base_t.");
+    assert(hx_support_relief_d > m3_pilot_d && hx_support_relief_d < standoff_od,
+        "hx_support_relief_d must remain larger than m3_pilot_d and smaller than standoff_od.");
 
     t = mode == "fit_check" ? fit_check_t : base_t;
 
@@ -372,7 +386,7 @@ module carrier() {
 
             if (mode == "carrier") {
                 direct_screw_board_mount(comb_pos, comb_holes);
-                direct_screw_board_mount(hx_pos, hx_holes);
+                direct_screw_board_mount(hx_pos, hx_holes, hx_center);
                 esp_cradle(esp_pos[0], esp_pos[1]);
             }
 
