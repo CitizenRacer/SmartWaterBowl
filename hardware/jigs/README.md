@@ -4,7 +4,7 @@ This jig locates the two mounting holes for each 50 kg load-cell bracket at the 
 
 ## File
 
-- `water_bowl_corner_hole_jig_v1.0.scad` — parametric OpenSCAD source
+- `water_bowl_corner_hole_jig.scad` — parametric OpenSCAD source
 
 Render the OpenSCAD source with **F6** and export an STL locally when needed. Generated STL files are intentionally not stored in the repository.
 
