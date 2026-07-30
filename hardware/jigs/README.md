@@ -2,10 +2,11 @@
 
 This jig locates the two mounting holes for each 50 kg load-cell bracket at the four corners of the 16 × 11 × 1 inch cutting-board scale platform.
 
-## Files
+## File
 
 - `water_bowl_corner_hole_jig_v1.0.scad` — parametric OpenSCAD source
-- `water_bowl_corner_hole_jig_v1.0.stl` — ready-to-slice model
+
+Render the OpenSCAD source with **F6** and export an STL locally when needed. Generated STL files are intentionally not stored in the repository.
 
 ## Version 1.0 geometry
 
